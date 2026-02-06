@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base Styles */
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #FDFDFD;
+  color: #1A1A1A;
+}
+
+/* Heading Font Utility */
+.font-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+}
+
+/* Premium Text Gradient */
+.text-gradient {
+  background: linear-gradient(135deg, #002147 0%, #D4AF37 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Gold Accent Border */
+.border-gold {
+  border-color: #D4AF37;
+}
+
+/* Oxford Blue Background */
+.bg-oxford {
+  background-color: #002147;
+}
+
+/* Premium Card */
+.card-premium {
+  background: #FFFFFF;
+  border-radius: 1.5rem;
+  box-shadow: 0 4px 24px rgba(0, 33, 71, 0.06);
+  border: 1px solid rgba(0, 33, 71, 0.05);
+}
+
+/* Academic Luxury Button */
+.btn-oxford {
+  background-color: #002147;
+  color: #FFFFFF;
+  font-weight: 700;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.btn-oxford:hover {
+  background-color: #001a38;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0, 33, 71, 0.2);
+}
+
+/* Gold Accent Text */
+.text-gold {
+  color: #D4AF37;
+}
+
+/* Subtle dot pattern for background */
+.bg-dot-pattern {
+  background-image: radial-gradient(circle, rgba(0, 33, 71, 0.03) 1px, transparent 1px);
+  background-size: 20px 20px;
+}

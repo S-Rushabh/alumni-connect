@@ -1,0 +1,8 @@
+{
+  "name": "AlumniPulse - Elite Global Network",
+  "description": "A premium alumni engagement platform featuring AI-powered daily briefings, semantic search, career path visualizations, and blockchain-verified credentials.",
+  "requestFramePermissions": [
+    "geolocation",
+    "microphone"
+  ]
+}

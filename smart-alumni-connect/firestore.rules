@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function to check owner
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // Function to check role
+    function hasRole(role) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    // Users: Read specific profile (auth), Write only own profile
+    // Allow reading all profiles (for directory) if signed in
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isOwner(userId); // Initial profile creation
+      allow update: if isSignedIn() && isOwner(userId); // Edit profile
+    }
+    
+    // Jobs: Read all (auth), Create (Alumni/Admin only), Update/Delete (Owner/Admin)
+    match /jobs/{jobId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn(); // For hackathon smoothness, allowing all signed-in users to post for now. 
+      // Ideally: if isSignedIn() && (hasRole('alumni') || hasRole('admin'));
+      allow update, delete: if isSignedIn() && (resource.data.postedBy == request.auth.uid || hasRole('admin'));
+    }
+
+    // Events: Read all (auth), Create (Admin/Alumni)
+    match /events/{eventId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn(); // Simplified for hackathon
+    }
+    
+    // Chats: Only participants can read/write
+    match /chats/{chatId} {
+      allow read, write: if isSignedIn() && (request.auth.uid in resource.data.participants);
+    }
+  }
+}
