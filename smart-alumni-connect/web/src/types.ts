@@ -43,18 +43,91 @@ export interface Job {
     // web-1 fields
     referralProb?: number;
     missingSkills?: string[];
+    // New fields for enhanced Opportunity page
+    jobType?: 'Full-time' | 'Part-time' | 'Contract' | 'Internship';
+    applyUrl?: string;
 }
 
 export interface Event {
     id?: string;
     title: string;
     date: any; // Firestore Timestamp or string
-    location?: string; // Optional in web-1? No, web-1 has no location prop in interface but maybe used?
-    // web-1 event interface: { id, title, date, type, description }
+    location?: string;
     type?: 'virtual' | 'physical';
     description: string;
-    organizer?: string;
+    organizer?: string; // User UID
+    organizerName?: string;
     attendees?: string[]; // Array of User UIDs
+    attendeeDetails?: EventAttendee[]; // Denormalized for display
+    createdAt?: any;
+    category?: string; // 'Networking', 'Career', 'Social', 'Workshop', 'Conference'
+    capacity?: number; // Max attendees (optional)
+    imageUrl?: string; // Event banner image
+    tags?: string[]; // Searchable tags
+    isRecurring?: boolean;
+    recurringPattern?: 'weekly' | 'monthly';
+    feedbackEnabled?: boolean;
+}
+
+export interface EventAttendee {
+    uid: string;
+    name: string;
+    photoURL?: string;
+    role?: string;
+    company?: string;
+    rsvpedAt?: any; // Timestamp
+}
+
+export interface EventFeedback {
+    id?: string;
+    eventId: string;
+    userId: string;
+    userName: string;
+    rating: number; // 1-5
+    comment?: string;
+    createdAt: any;
+}
+
+// Networking & Connections
+export interface Connection {
+    id?: string;
+    requesterId: string;
+    requesterName: string;
+    requesterPhoto?: string;
+    requesterRole?: string;
+    requesterCompany?: string;
+    recipientId: string;
+    recipientName: string;
+    recipientPhoto?: string;
+    recipientRole?: string;
+    recipientCompany?: string;
+    status: 'pending' | 'accepted' | 'rejected';
+    message?: string; // Optional intro message
+    createdAt: any;
+    respondedAt?: any;
+}
+
+export interface UserPresence {
+    uid: string;
+    status: 'online' | 'offline' | 'away';
+    lastSeen: any;
+}
+
+export interface MessageReaction {
+    id?: string;
+    userId: string;
+    userName: string;
+    reaction: string; // emoji
+    createdAt: any;
+}
+
+export interface NetworkingStats {
+    totalConnections: number;
+    messagesSent: number;
+    messagesReceived: number;
+    responseRate: number; // percentage
+    connectionGrowth: { date: string; count: number }[];
+    mostActiveConnections: { uid: string; name: string; messageCount: number }[];
 }
 
 export interface ChatMessage {
@@ -62,6 +135,14 @@ export interface ChatMessage {
     senderId: string;
     text: string;
     timestamp: any;
+    // Enhanced fields
+    type?: 'text' | 'image' | 'file';
+    fileUrl?: string;
+    fileName?: string;
+    fileSize?: number;
+    imageUrl?: string;
+    readBy?: string[]; // Array of user IDs who read the message
+    reactions?: { [emoji: string]: string[] }; // Reaction users
 }
 
 export interface Chat {
@@ -123,3 +204,33 @@ export interface JobExtended extends Job {
 // For now, we are just adding the new fields to the main interface via intersection or optional props
 // Let's modify the original interfaces above instead of creating new ones to avoid conflicts.
 
+// --- Job Application and Referral Types ---
+
+export interface JobApplication {
+    id?: string;
+    jobId: string;
+    jobTitle: string;
+    jobCompany: string;
+    applicantUid: string;
+    applicantName: string;
+    applicantEmail: string;
+    phoneNumber: string;
+    resumeUrl?: string;
+    coverLetter: string;
+    createdAt: any; // Firestore Timestamp
+    status: 'pending' | 'reviewed' | 'accepted' | 'rejected';
+}
+
+export interface ReferralRequest {
+    id?: string;
+    jobId: string;
+    jobTitle: string;
+    jobCompany: string;
+    requesterId: string;
+    requesterName: string;
+    referrerId: string; // Job poster or alumni who can refer
+    referrerName: string;
+    message?: string;
+    createdAt: any; // Firestore Timestamp
+    status: 'pending' | 'accepted' | 'rejected';
+}

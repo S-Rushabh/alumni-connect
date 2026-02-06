@@ -29,8 +29,8 @@ function App() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [requestLoading, setRequestLoading] = useState(true);
-
-
+  const [viewedProfile, setViewedProfile] = useState<UserProfile | null>(null);
+  const [chatTargetUser, setChatTargetUser] = useState<UserProfile | null>(null);
 
   // Monitor Auth State
   useEffect(() => {
@@ -66,6 +66,29 @@ function App() {
     return () => unsubscribe();
   }, [currentPage]); // Dependency on currentPage to ensure redirect logic works if state changes mid-stream? No, usually just empty dependency for auth listener.
 
+  // Handler to view another user's profile
+  const handleViewProfile = (alum: UserProfile) => {
+    setViewedProfile(alum);
+    setCurrentPage(Page.Profile);
+  };
+
+  const handleStartChat = (alum: UserProfile) => {
+    setChatTargetUser(alum);
+    setCurrentPage(Page.Networking);
+  };
+
+  // Handler to navigate - clears viewed profile if going elsewhere
+  const handlePageChange = (page: Page) => {
+    if (page !== Page.Profile) {
+      setViewedProfile(null);
+    }
+    // Only clear chat target if NOT going to Networking
+    if (page !== Page.Networking) {
+      setChatTargetUser(null);
+    }
+    setCurrentPage(page);
+  };
+
   const renderPage = () => {
     switch (currentPage) {
       case Page.Landing:
@@ -87,38 +110,35 @@ function App() {
       case Page.Dashboard:
         return (
           <Dashboard
-            onNavigate={setCurrentPage}
+            onNavigate={handlePageChange}
             currentUser={profile}
             onStartFlashMatch={(alum) => {
               console.log("Flash Match requested with:", alum);
-              // Navigate to Networking with this alum potentially selected (would need more state in App but for now just go there)
-              setCurrentPage(Page.Networking);
+              handleStartChat(alum);
             }}
+            onStartChat={handleStartChat}
           />
         );
       case Page.Directory:
         return (
           <Directory
-            onStartChat={(alum) => {
-              console.log("Chat started with:", alum);
-              setCurrentPage(Page.Networking);
-            }}
+            onStartChat={handleStartChat}
+            onViewProfile={handleViewProfile}
           />
         );
       case Page.Profile:
         return (
           <Profile
             selfUser={profile}
-          // If we had a "viewing profile" state in App, we would pass it here
-          // For now, only self profile is fully supported via nav
+            alum={viewedProfile}
           />
         );
       case Page.Jobs:
         return <Jobs currentUser={profile} />;
       case Page.Events:
-        return <Events />;
+        return <Events currentUser={profile} />;
       case Page.Networking:
-        return <Networking currentUser={profile} />;
+        return <Networking currentUser={profile} initialUser={chatTargetUser} />;
       case Page.Analytics:
         return <Analytics />;
 
@@ -141,7 +161,7 @@ function App() {
     <Layout
       currentPage={currentPage}
       isAuthenticated={!!user}
-      onPageChange={setCurrentPage}
+      onPageChange={handlePageChange}
       onLogout={handleLogout}
       currentUser={profile}
     >
