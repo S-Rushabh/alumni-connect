@@ -12,6 +12,7 @@ export interface UserProfile {
     location?: string;
     industry?: string;
     mentorshipStatus?: 'available' | 'seeking' | 'none';
+    headline?: string; // e.g. "Senior Software Engineer" or "CS Student"
     vibePulse?: string;
     careerPath?: any[]; // Simplified for now
     entityType?: 'student' | 'alumni' | 'teacher';
@@ -26,7 +27,14 @@ export interface UserProfile {
     gamification?: {
         points: number;
         badges: string[];
+        level?: number;
+        rank?: number;
+        currentTier?: string;
     };
+    // Donation fields
+    totalDonations?: number;
+    lastDonationDate?: any; // Firestore Timestamp
+    donationHistory?: { date: any; amount: number; }[]; // Added for calendar heatmap
 }
 
 export interface Job {
@@ -154,18 +162,20 @@ export interface Chat {
 
 // --- Web-1 Types for UI Integration ---
 
-export enum Page {
-    Landing = 'landing',
-    Login = 'login',
-    SignUp = 'signup',
-    Dashboard = 'dashboard',
-    Directory = 'directory',
-    Profile = 'profile',
-    Jobs = 'jobs',
-    Events = 'events',
-    Networking = 'networking',
-    Analytics = 'analytics'
-}
+export const Page = {
+    Landing: 'landing',
+    Login: 'login',
+    SignUp: 'signup',
+    Dashboard: 'dashboard',
+    Directory: 'directory',
+    Profile: 'profile',
+    Jobs: 'jobs',
+    Events: 'events',
+    Networking: 'networking',
+    Analytics: 'analytics'
+} as const;
+
+export type Page = typeof Page[keyof typeof Page];
 
 export type EntityType = 'student' | 'alumni' | 'teacher';
 
@@ -233,4 +243,138 @@ export interface ReferralRequest {
     message?: string;
     createdAt: any; // Firestore Timestamp
     status: 'pending' | 'accepted' | 'rejected';
+}
+
+// --- Gamification Types ---
+
+export interface Badge {
+    id: string;
+    name: string;
+    description: string;
+    icon: string;
+    category: 'profile' | 'networking' | 'mentorship' | 'donation' | 'events' | 'achievement' | 'engagement';
+    criteria: any;
+    points: number;
+    rarity: 'common' | 'rare' | 'epic' | 'legendary' | 'uncommon';
+}
+
+export interface Quest {
+    id: string;
+    title: string;
+    description: string;
+    points: number;
+    type: 'profile' | 'social' | 'exploration' | 'daily';
+    criteria: {
+        type: 'profile_completion' | 'message_count' | 'connection_count' | 'page_visit' | 'custom';
+        target?: number;
+        field?: string; // For profile fields
+        pageId?: string; // For exploration
+    };
+    icon: string;
+}
+
+export interface UserQuest {
+    questId: string;
+    userId: string;
+    status: 'active' | 'completed';
+    progress: number;
+    completedAt?: any; // Timestamp
+    claimed: boolean;
+}
+
+export interface PointTransaction {
+    userId: string;
+    action: string;
+    points: number;
+    description: string;
+    timestamp: any;
+}
+
+export interface StreakData {
+    currentStreak: number;
+    longestStreak: number;
+    lastLoginDate: any;
+    streakHistory: any[];
+}
+
+// --- Challenge Types ---
+
+export interface Challenge {
+    id: string;
+    title: string;
+    description: string;
+    type: 'daily' | 'weekly' | 'monthly' | 'special';
+    criteria: { action: string; target: number };
+    reward: number;
+    startDate: any;
+    endDate: any;
+    icon: string;
+}
+
+export interface UserChallengeProgress {
+    challengeId: string;
+    progress: number;
+    status: 'active' | 'completed' | 'failed';
+    startedAt: any;
+    completedAt?: any;
+}
+
+// --- Shadowing Types ---
+
+export interface ShadowingOpportunity {
+    id?: string;
+    alumniId: string;
+    company: string;
+    position: string;
+    industry: string;
+    description: string;
+    availableDates: any[]; // Timestamps
+    maxSlots: number;
+    bookedSlots: number;
+    requirements: string[];
+    location: {
+        city: string;
+        address?: string;
+    };
+    isVirtual: boolean;
+    createdAt?: any;
+}
+
+export interface ShadowingBooking {
+    id?: string;
+    opportunityId: string;
+    alumniId: string;
+    studentId: string;
+    selectedDate: any;
+    status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+    feedback?: {
+        studentRating: number;
+        studentComment: string;
+        alumniRating: number;
+        alumniComment: string;
+    };
+    createdAt?: any;
+    updatedAt?: any;
+}
+
+// --- Heatmap Types ---
+
+export interface LocationData {
+    city: string;
+    country: string;
+    coordinates: { latitude: number; longitude: number };
+    alumniCount: number;
+    avgEngagement: number;
+    avgSuccessScore: number;
+    totalDonations?: number; // Added
+    topIndustries: string[];
+}
+
+// --- Event Recommendation Types ---
+
+export interface EventRecommendation {
+    eventId: string;
+    score: number;
+    reasons: string[];
+    event?: Event; // Hydrated event
 }

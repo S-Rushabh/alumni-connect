@@ -1,5 +1,5 @@
 import { createEvent } from './services/events';
-import { Timestamp } from 'firebase/firestore';
+// import { collection, addDoc } from 'firebase/firestore';
 
 // Sample events to populate the database
 const sampleEvents = [

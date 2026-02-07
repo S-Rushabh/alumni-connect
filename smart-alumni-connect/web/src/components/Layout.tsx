@@ -21,7 +21,7 @@ const Layout: React.FC<Props> = ({ currentPage, isAuthenticated, onPageChange, o
         { id: Page.Analytics, label: 'Data', desktopLabel: 'Insights', icon: '📊' },
     ];
 
-    const hideSidebar = !isAuthenticated || [Page.Landing, Page.Login, Page.SignUp].includes(currentPage);
+    const hideSidebar = !isAuthenticated || ([Page.Landing, Page.Login, Page.SignUp] as string[]).includes(currentPage);
 
     if (hideSidebar) return <>{children}</>;
 

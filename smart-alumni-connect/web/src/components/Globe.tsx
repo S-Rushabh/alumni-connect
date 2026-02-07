@@ -21,13 +21,16 @@ const Globe: React.FC = () => {
 
         const path = d3.geoPath(projection, context);
 
-        let world: any;
+
         let rotation = [0, 0];
 
         // Simple world data simulation
+        // Simple world data simulation
+        /* 
         d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then((data: any) => {
             world = (window as any).topojson ? (window as any).topojson.feature(data, data.objects.countries) : null;
         });
+        */
 
         const pulses = Array.from({ length: 15 }, () => ({
             coords: [Math.random() * 360 - 180, Math.random() * 180 - 90],

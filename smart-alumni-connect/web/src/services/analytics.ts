@@ -1,7 +1,7 @@
 import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { getAllUsers } from "./user";
-import type { UserProfile } from "../types";
+
 
 export interface AnalyticsOverview {
     total_users: number;
@@ -10,7 +10,9 @@ export interface AnalyticsOverview {
     weekly_activity: number[];
     top_locations: Array<{ city: string; count: number }>;
     graduation_distribution: Record<string, number>;
+    industry_distribution: Array<{ sector: string; count: number }>;
     donation_prediction: number;
+    dailyDonations: Array<{ date: string; value: number }>; // Added for heatmap
     recommended_campaign_target: {
         class_year: number;
         sector: string;
@@ -47,7 +49,7 @@ const normalizeCity = (location?: string): string => {
     return city || 'Unknown';
 };
 
-export const getAnalyticsOverview = async (): Promise<AnalyticsOverview | null> => {
+export const getAnalyticsOverview = async (timeRange: '1M' | '6M' | '1Y' = '1Y'): Promise<AnalyticsOverview | null> => {
     try {
         // 1. Fetch all users for aggregations
         const users = await getAllUsers();
@@ -85,9 +87,17 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview | null> 
         });
 
         // 5. Donation Prediction (Heuristic logic)
-        // Assume 5% of alumni donate avg $500
+        // Adjust prediction based on time range (Annualized vs Monthly run rate?)
+        // Let's keep it as "Projected Capacity" which is usually annual, but maybe growth varies.
         const alumniCount = users.filter(u => u.role === 'alumni').length;
-        const donation_prediction = Math.round((alumniCount * 0.05 * 500) / 1000) / 10; // in Millions, e.g. 0.5M
+        const baseDonation = alumniCount * 0.05 * 500; // $500 avg per donor
+        let multiplier = 1;
+        if (timeRange === '1M') multiplier = 0.08; // Monthly view
+        if (timeRange === '6M') multiplier = 0.5;
+
+        // Ensure at least some value for demo if 0 users
+        const effectiveBase = baseDonation > 0 ? baseDonation : 50000;
+        const donation_prediction = Math.round((effectiveBase * multiplier) / 1000) / 10;
 
         // 6. Recommended Target (Largest grouping)
         let maxGradCount = 0;
@@ -108,10 +118,43 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview | null> 
         });
         const topIndustry = Object.entries(industryCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Technology';
 
-        // 7. Mock growth/activity for now (hard to calculate without historical snapshots)
-        // We could store daily snapshots or just return static small growth
-        const growth_percentage = 12.5;
-        const weekly_activity = [10, 25, 40, 30, 60, 80, 50]; // Mock curve
+        const industry_distribution = Object.entries(industryCounts)
+            .map(([sector, count]) => ({ sector, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5); // Top 5 sectors
+
+        // 7. Daily Donation Aggregation for Heatmap
+        const donationMap = new Map<string, number>();
+        users.forEach(user => {
+            if (user.donationHistory) {
+                user.donationHistory.forEach(record => {
+                    // Convert Firestore Timestamp to YYYY-MM-DD
+                    const date = record.date.toDate().toISOString().split('T')[0];
+                    const current = donationMap.get(date) || 0;
+                    donationMap.set(date, current + record.amount);
+                });
+            }
+        });
+
+        const dailyDonations = Array.from(donationMap.entries()).map(([date, value]) => ({
+            date,
+            value
+        }));
+
+        // 8. Dynamic Mock Data for Time Range
+        let growth_percentage = 12.5;
+        let weekly_activity: number[] = [];
+
+        if (timeRange === '1M') {
+            growth_percentage = 4.2;
+            weekly_activity = [15, 20, 18, 25, 30, 28, 35, 40]; // Granular
+        } else if (timeRange === '6M') {
+            growth_percentage = 8.7;
+            weekly_activity = [30, 45, 40, 55, 60, 50, 70, 75, 65, 80, 85, 90];
+        } else {
+            growth_percentage = 12.5;
+            weekly_activity = [10, 25, 40, 30, 60, 80, 50, 70, 90, 85, 95, 100];
+        }
 
         return {
             total_users,
@@ -120,9 +163,9 @@ export const getAnalyticsOverview = async (): Promise<AnalyticsOverview | null> 
             weekly_activity,
             top_locations,
             graduation_distribution,
-            donation_prediction, // stored as number (e.g. 2.4 for $2.4M) implies formatting needs check
-            // API returned number. analytics.tsx formats it: ${analytics.donation_prediction || 2.4}M
-            // So if I return 0.5, it shows $0.5M. Correct.
+            industry_distribution,
+            donation_prediction,
+            dailyDonations,
             recommended_campaign_target: {
                 class_year: maxGradYear,
                 sector: topIndustry

@@ -12,7 +12,6 @@ interface Props {
 
 type RoleFilter = 'all' | 'alumni' | 'student' | 'teacher';
 type MentorshipFilter = 'all' | 'available' | 'seeking';
-type SortOption = 'name' | 'recent' | 'graduation';
 
 const Directory: React.FC<Props> = ({ onStartChat, onViewProfile }) => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -25,7 +24,7 @@ const Directory: React.FC<Props> = ({ onStartChat, onViewProfile }) => {
     // New filter states
     const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
     const [mentorshipFilter, setMentorshipFilter] = useState<MentorshipFilter>('all');
-    const [sortBy, setSortBy] = useState<SortOption>('name');
+    const [sortBy, setSortBy] = useState<'name' | 'year' | 'points'>('points'); // Default to points for gamification
     const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
@@ -104,9 +103,10 @@ const Directory: React.FC<Props> = ({ onStartChat, onViewProfile }) => {
             switch (sortBy) {
                 case 'name':
                     return (a.displayName || '').localeCompare(b.displayName || '');
-                case 'graduation':
+                case 'year':
                     return (b.graduationYear || 0) - (a.graduationYear || 0);
-                case 'recent':
+                case 'points':
+                    return ((b.gamification?.points || 0) - (a.gamification?.points || 0));
                 default:
                     return 0;
             }
@@ -236,12 +236,12 @@ const Directory: React.FC<Props> = ({ onStartChat, onViewProfile }) => {
                             <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block mb-2">Sort By</label>
                             <select
                                 value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value as SortOption)}
-                                className="w-full px-4 py-2 bg-surface-secondary border border-surface-tertiary rounded-xl text-oxford focus:outline-none focus:ring-2 focus:ring-oxford/10"
+                                onChange={(e) => setSortBy(e.target.value as 'name' | 'year' | 'points')}
+                                className="bg-white border border-slate-200 rounded-xl px-4 py-3 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 appearance-none"
                             >
-                                <option value="name">Name (A-Z)</option>
-                                <option value="graduation">Graduation Year</option>
-                                <option value="recent">Most Recent</option>
+                                <option value="name">Sort by Name</option>
+                                <option value="year">Sort by Year</option>
+                                <option value="points">Sort by Points</option>
                             </select>
                         </div>
                     </div>

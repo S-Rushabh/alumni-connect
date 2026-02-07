@@ -7,6 +7,7 @@ import { logout } from './services/auth';
 // import { getJobs } from './services/jobs';
 // import { getEvents } from './services/events';
 import { Page, type UserProfile } from './types';
+import { questService } from './services/quests';
 
 // Components
 import Layout from './components/Layout';
@@ -47,7 +48,7 @@ function App() {
           // setEvents(fetchedEvents);
 
           // If we are on Landing/Login/Signup and just logged in, go to Dashboard
-          if ([Page.Landing, Page.Login, Page.SignUp].includes(currentPage)) {
+          if (([Page.Landing, Page.Login, Page.SignUp] as Page[]).includes(currentPage)) {
             setCurrentPage(Page.Dashboard);
           }
 
@@ -57,7 +58,7 @@ function App() {
       } else {
         setProfile(null);
         // If we are on protected routes and logged out, go to Landing
-        if (![Page.Landing, Page.Login, Page.SignUp].includes(currentPage)) {
+        if (!([Page.Landing, Page.Login, Page.SignUp] as Page[]).includes(currentPage)) {
           setCurrentPage(Page.Landing);
         }
       }
@@ -90,6 +91,12 @@ function App() {
   };
 
   const renderPage = () => {
+    // Quest Triggers
+    if (user?.uid) {
+      if (currentPage === Page.Analytics) questService.trackPageVisit(user.uid, 'analytics');
+      if (currentPage === Page.Jobs) questService.trackPageVisit(user.uid, 'jobs');
+    }
+
     switch (currentPage) {
       case Page.Landing:
         return <Landing onStart={() => setCurrentPage(Page.Login)} />;
@@ -116,7 +123,6 @@ function App() {
               console.log("Flash Match requested with:", alum);
               handleStartChat(alum);
             }}
-            onStartChat={handleStartChat}
           />
         );
       case Page.Directory:
@@ -131,6 +137,7 @@ function App() {
           <Profile
             selfUser={profile}
             alum={viewedProfile}
+            onStartChat={handleStartChat}
           />
         );
       case Page.Jobs:

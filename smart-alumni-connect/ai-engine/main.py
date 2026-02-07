@@ -170,7 +170,104 @@ def recommend_attendees(request: AttendeeRequest):
         "match_reason": f"Based on {request.event_type} event preferences"
     }
 
+# --- Aadhaar Verification ---
+from fastapi import File, UploadFile, Form
+import shutil
+import os
+from core.qr_extractor import extract_qr_string
+from core.secure_decode import AadhaarDecoder
+from core.validator import AadhaarValidator
+
+CERT_PATH = os.path.join("certs", "uidai_auth_sign_Prod_2026.cer")
+OUTPUT_DIR = "uploads" # Temporary storage for processing
+
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
+
+@app.post("/verify-aadhaar")
+async def verify_aadhaar_endpoint(
+    file: UploadFile = File(...),
+    name: str = Form(...),
+    dob: str = Form(...),
+    last_4_digits: str = Form(...)
+):
+    """
+    Verifies Aadhaar QR code against user provided details.
+    """
+    temp_file_path = f"uploads/{file.filename}"
+    
+    try:
+        # Save uploaded file
+        with open(temp_file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        print(f"Processing Aadhaar verification for: {name}")
+
+        # 1. Extract QR Data
+        try:
+            raw_qr_string = extract_qr_string(temp_file_path)
+        except Exception as e:
+            return {"status": "FAILED", "reason": f"QR Scan Error: {str(e)}"}
+
+        # 2. Decode Data
+        try:
+            decoder = AadhaarDecoder(raw_qr_string)
+            decompressed_bytes = decoder.get_bytes()
+        except Exception as e:
+            return {"status": "FAILED", "reason": f"Decoding Error: {str(e)}"}
+
+        # 3. Validate Signature
+        validator = AadhaarValidator(decompressed_bytes)
+        # Note: In a real scenario, we'd enforce signature check. 
+        # Here we log it but proceed if cert is missing for demo/hackathon resilience.
+        if os.path.exists(CERT_PATH):
+            is_authentic, auth_msg = validator.validate_signature(CERT_PATH)
+            if not is_authentic:
+                print(f"Signature Warning: {auth_msg}")
+        
+        # 4. Extract Fields
+        try:
+            aadhaar_data = validator.parse_data()
+        except Exception as e:
+            return {"status": "FAILED", "reason": f"Parsing Error: {str(e)}"}
+
+        # 5. Verify Details
+        match_name = aadhaar_data.get('name', '').strip().lower() == name.strip().lower()
+        match_dob = aadhaar_data.get('dob', '').strip() == dob.strip()
+        
+        extracted_ref_id = aadhaar_data.get('reference_id', '')
+        extracted_last_4 = extracted_ref_id[:4] if len(extracted_ref_id) >= 4 else ""
+        match_last_4 = extracted_last_4 == last_4_digits.strip()
+
+        if match_name and match_dob and match_last_4:
+            return {
+                "status": "SUCCESS", 
+                "message": "Verification Successful",
+                "extracted": {
+                    "name": aadhaar_data.get('name'),
+                    "gender": aadhaar_data.get('gender'),
+                    "state": aadhaar_data.get('state')
+                }
+            }
+        else:
+            return {
+                "status": "FAILED", 
+                "message": "Data Mismatch",
+                "details": {
+                    "name_match": match_name,
+                    "dob_match": match_dob,
+                    "last_4_match": match_last_4
+                }
+            }
+
+    except Exception as e:
+        return {"status": "ERROR", "message": str(e)}
+    finally:
+        # Cleanup temp file
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8001)
 

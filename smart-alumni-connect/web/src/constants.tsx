@@ -1,5 +1,5 @@
 
-import { Alum, Job, Event } from './types';
+import type { Alum, Job, Event } from './types';
 
 export const MOCK_ALUMNI: Alum[] = [
     {
@@ -46,7 +46,9 @@ export const MOCK_JOBS: Job[] = [
         location: 'Remote',
         referralProb: 85,
         missingSkills: ['Framer', 'Prototyping'],
-        description: 'Lead design systems for global payment infrastructure.'
+        description: 'Lead design systems for global payment infrastructure.',
+        postedBy: 'system',
+        createdAt: new Date().toISOString()
     },
     {
         id: 'j2',
@@ -55,7 +57,9 @@ export const MOCK_JOBS: Job[] = [
         location: 'Zurich, CH',
         referralProb: 12,
         missingSkills: ['Quantum Cryptography', 'Python'],
-        description: 'Explore the boundaries of error-corrected quantum computing.'
+        description: 'Explore the boundaries of error-corrected quantum computing.',
+        postedBy: 'system',
+        createdAt: new Date().toISOString()
     }
 ];
 

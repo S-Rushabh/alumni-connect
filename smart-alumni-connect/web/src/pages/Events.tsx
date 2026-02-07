@@ -14,6 +14,7 @@ import {
     getAverageRating
 } from '../services/events';
 import { getRecommendedAttendees, type AttendeeRecommendation } from '../services/analytics';
+import { EventRecommendations } from '../components/events/EventRecommendations';
 import type { Event, UserProfile, EventAttendee, EventFeedback } from '../types';
 
 interface Props {
@@ -53,6 +54,8 @@ const Events: React.FC<Props> = ({ currentUser }) => {
         location: '',
         category: 'Networking',
         capacity: '',
+        imageUrl: '',
+        tags: '',
         feedbackEnabled: true
     });
 
@@ -91,8 +94,7 @@ const Events: React.FC<Props> = ({ currentUser }) => {
                 if (event.id) {
                     const recommendation = await getRecommendedAttendees(
                         event.type || 'virtual',
-                        event.category,
-                        undefined
+                        event.category
                     );
                     if (recommendation) {
                         setAttendeeData(prev => ({
@@ -178,6 +180,8 @@ const Events: React.FC<Props> = ({ currentUser }) => {
                 location: newEvent.location || undefined,
                 category: newEvent.category,
                 capacity: newEvent.capacity ? parseInt(newEvent.capacity) : undefined,
+                imageUrl: newEvent.imageUrl || undefined,
+                tags: newEvent.tags ? newEvent.tags.split(',').map(t => t.trim()).filter(t => t) : [],
                 feedbackEnabled: newEvent.feedbackEnabled
             }, currentUser.uid, currentUser.displayName || 'Anonymous');
 
@@ -192,6 +196,8 @@ const Events: React.FC<Props> = ({ currentUser }) => {
                 location: '',
                 category: 'Networking',
                 capacity: '',
+                imageUrl: '',
+                tags: '',
                 feedbackEnabled: true
             });
             fetchEvents();
@@ -278,7 +284,8 @@ const Events: React.FC<Props> = ({ currentUser }) => {
             result = result.filter(e =>
                 e.title.toLowerCase().includes(query) ||
                 e.description.toLowerCase().includes(query) ||
-                e.category?.toLowerCase().includes(query)
+                e.category?.toLowerCase().includes(query) ||
+                (e.tags && e.tags.some(tag => tag.toLowerCase().includes(query)))
             );
         }
 
@@ -373,6 +380,9 @@ const Events: React.FC<Props> = ({ currentUser }) => {
                 </div>
             </div>
 
+            {/* Recommendations */}
+            {currentUser && <EventRecommendations currentUser={currentUser} />}
+
             {/* Events Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {filteredEvents.length > 0 ? filteredEvents.map(event => {
@@ -386,113 +396,136 @@ const Events: React.FC<Props> = ({ currentUser }) => {
                     return (
                         <div key={event.id} className="relative group">
                             <div className="absolute inset-0 bg-gold rounded-3xl blur-[40px] opacity-0 group-hover:opacity-5 transition-opacity" />
-                            <div className="relative card-premium p-8 h-full flex flex-col group-hover:shadow-premium transition-all">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div className="flex gap-2">
-                                        <span className="px-3 py-1 bg-oxford/5 border border-oxford/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-oxford">
-                                            {event.type}
-                                        </span>
-                                        {event.category && (
-                                            <span className="px-3 py-1 bg-gold/5 border border-gold/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-gold">
-                                                {event.category}
+                            <div className="relative card-premium h-full flex flex-col group-hover:shadow-premium transition-all overflow-hidden p-0">
+
+                                {event.imageUrl && (
+                                    <div className="h-48 w-full overflow-hidden relative">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+                                        <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                                        <div className="absolute bottom-4 left-6 z-20">
+                                            <span className="px-3 py-1 bg-white/20 backdrop-blur-md border border-white/20 rounded-full text-[10px] font-bold uppercase tracking-widest text-white">
+                                                {event.category || 'Event'}
                                             </span>
-                                        )}
-                                        {past && (
-                                            <span className="px-3 py-1 bg-gray-100 border border-gray-200 rounded-full text-[10px] font-bold uppercase tracking-widest text-gray-500">
-                                                Past
-                                            </span>
-                                        )}
+                                        </div>
                                     </div>
-                                    <span className="text-text-muted font-bold text-sm">
-                                        {typeof event.date === 'string' ? event.date : new Date(event.date.seconds * 1000).toLocaleDateString()}
-                                    </span>
-                                </div>
-
-                                <h2 className="font-heading text-2xl font-bold mb-4 text-oxford group-hover:text-gold transition-colors">{event.title}</h2>
-                                <p className="text-text-secondary text-sm mb-6 flex-1 leading-relaxed line-clamp-3">{event.description}</p>
-
-                                {event.location && (
-                                    <p className="text-sm text-text-muted mb-4">📍 {event.location}</p>
                                 )}
 
-                                {/* Attendees */}
-                                <div className="bg-gold/5 border border-gold/20 p-4 rounded-2xl mb-6">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <h3 className="text-[10px] font-bold text-gold uppercase tracking-widest flex items-center gap-2">
-                                            <span>👥</span> {attendeeCount} Attending
-                                            {event.capacity && ` / ${event.capacity}`}
-                                        </h3>
-                                        {attendeeCount > 0 && (
+                                <div className="p-8 flex flex-col flex-1">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className="flex flex-wrap gap-2">
+                                            {!event.imageUrl && (
+                                                <span className="px-3 py-1 bg-oxford/5 border border-oxford/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-oxford">
+                                                    {event.type}
+                                                </span>
+                                            )}
+                                            {/* Show category tag only if no image, as image has it overlaid */}
+                                            {!event.imageUrl && event.category && (
+                                                <span className="px-3 py-1 bg-gold/5 border border-gold/10 rounded-full text-[10px] font-bold uppercase tracking-widest text-gold">
+                                                    {event.category}
+                                                </span>
+                                            )}
+                                            {past && (
+                                                <span className="px-3 py-1 bg-gray-100 border border-gray-200 rounded-full text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                                                    Past
+                                                </span>
+                                            )}
+                                            {event.tags && event.tags.map(tag => (
+                                                <span key={tag} className="px-2 py-1 bg-slate-100 rounded-md text-[9px] font-medium text-slate-600">
+                                                    #{tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                        <span className="text-text-muted font-bold text-sm">
+                                            {typeof event.date === 'string' ? event.date : new Date(event.date.seconds * 1000).toLocaleDateString()}
+                                        </span>
+                                    </div>
+
+                                    <h2 className="font-heading text-2xl font-bold mb-4 text-oxford group-hover:text-gold transition-colors">{event.title}</h2>
+                                    <p className="text-text-secondary text-sm mb-6 flex-1 leading-relaxed line-clamp-3">{event.description}</p>
+
+                                    {event.location && (
+                                        <p className="text-sm text-text-muted mb-4">📍 {event.location}</p>
+                                    )}
+
+                                    {/* Attendees */}
+                                    <div className="bg-gold/5 border border-gold/20 p-4 rounded-2xl mb-6">
+                                        <div className="flex justify-between items-center mb-3">
+                                            <h3 className="text-[10px] font-bold text-gold uppercase tracking-widest flex items-center gap-2">
+                                                <span>👥</span> {attendeeCount} Attending
+                                                {event.capacity && ` / ${event.capacity}`}
+                                            </h3>
+                                            {attendeeCount > 0 && (
+                                                <button
+                                                    onClick={() => handleViewAttendees(event)}
+                                                    className="text-[10px] text-gold hover:underline font-bold"
+                                                >
+                                                    View All →
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="flex -space-x-2">
+                                            {eventAttendees ? (
+                                                <>
+                                                    {eventAttendees.recommended_attendees.slice(0, 4).map((attendee) => (
+                                                        <div
+                                                            key={attendee.uid}
+                                                            className="w-8 h-8 rounded-full border-2 border-white shadow-sm bg-oxford text-gold flex items-center justify-center text-[10px] font-bold cursor-help"
+                                                            title={`${attendee.name} - ${attendee.role} at ${attendee.company}`}
+                                                        >
+                                                            {getInitials(attendee.name)}
+                                                        </div>
+                                                    ))}
+                                                    {eventAttendees.total_interested > 4 && (
+                                                        <div className="w-8 h-8 rounded-full bg-oxford text-gold flex items-center justify-center text-[10px] font-bold border-2 border-white">
+                                                            +{eventAttendees.total_interested - 4}
+                                                        </div>
+                                                    )}
+                                                </>
+                                            ) : attendeeCount > 0 ? (
+                                                <div className="text-xs text-gold/70">
+                                                    {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} attending
+                                                </div>
+                                            ) : (
+                                                <div className="text-xs text-gold/70">Be the first to RSVP!</div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Actions */}
+                                    <div className="flex gap-3">
+                                        {!past && (
+                                            <button
+                                                onClick={() => handleRSVP(event)}
+                                                disabled={!currentUser || submitting || !!atCapacity}
+                                                className={`flex-1 font-bold py-3 rounded-xl transition-all ${isRSVPed
+                                                    ? 'bg-success text-white'
+                                                    : atCapacity
+                                                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                                                        : 'btn-oxford'
+                                                    }`}
+                                            >
+                                                {isRSVPed ? '✓ Registered' : atCapacity ? 'Full' : 'RSVP Now'}
+                                            </button>
+                                        )}
+
+                                        {past && event.feedbackEnabled && isRSVPed && (
+                                            <button
+                                                onClick={() => handleViewFeedback(event)}
+                                                className="flex-1 card-premium hover:border-gold/30 text-oxford font-semibold py-3 rounded-xl transition-all"
+                                            >
+                                                ⭐ Feedback
+                                            </button>
+                                        )}
+
+                                        {isOrganizer && (
                                             <button
                                                 onClick={() => handleViewAttendees(event)}
-                                                className="text-[10px] text-gold hover:underline font-bold"
+                                                className="flex-1 card-premium hover:border-oxford/30 text-oxford font-semibold py-3 rounded-xl transition-all"
                                             >
-                                                View All →
+                                                📋 Manage
                                             </button>
                                         )}
                                     </div>
-                                    <div className="flex -space-x-2">
-                                        {eventAttendees ? (
-                                            <>
-                                                {eventAttendees.recommended_attendees.slice(0, 4).map((attendee) => (
-                                                    <div
-                                                        key={attendee.uid}
-                                                        className="w-8 h-8 rounded-full border-2 border-white shadow-sm bg-oxford text-gold flex items-center justify-center text-[10px] font-bold cursor-help"
-                                                        title={`${attendee.name} - ${attendee.role} at ${attendee.company}`}
-                                                    >
-                                                        {getInitials(attendee.name)}
-                                                    </div>
-                                                ))}
-                                                {eventAttendees.total_interested > 4 && (
-                                                    <div className="w-8 h-8 rounded-full bg-oxford text-gold flex items-center justify-center text-[10px] font-bold border-2 border-white">
-                                                        +{eventAttendees.total_interested - 4}
-                                                    </div>
-                                                )}
-                                            </>
-                                        ) : attendeeCount > 0 ? (
-                                            <div className="text-xs text-gold/70">
-                                                {attendeeCount} {attendeeCount === 1 ? 'person' : 'people'} attending
-                                            </div>
-                                        ) : (
-                                            <div className="text-xs text-gold/70">Be the first to RSVP!</div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Actions */}
-                                <div className="flex gap-3">
-                                    {!past && (
-                                        <button
-                                            onClick={() => handleRSVP(event)}
-                                            disabled={!currentUser || submitting || !!atCapacity}
-                                            className={`flex-1 font-bold py-3 rounded-xl transition-all ${isRSVPed
-                                                ? 'bg-success text-white'
-                                                : atCapacity
-                                                    ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                                                    : 'btn-oxford'
-                                                }`}
-                                        >
-                                            {isRSVPed ? '✓ Registered' : atCapacity ? 'Full' : 'RSVP Now'}
-                                        </button>
-                                    )}
-
-                                    {past && event.feedbackEnabled && isRSVPed && (
-                                        <button
-                                            onClick={() => handleViewFeedback(event)}
-                                            className="flex-1 card-premium hover:border-gold/30 text-oxford font-semibold py-3 rounded-xl transition-all"
-                                        >
-                                            ⭐ Feedback
-                                        </button>
-                                    )}
-
-                                    {isOrganizer && (
-                                        <button
-                                            onClick={() => handleViewAttendees(event)}
-                                            className="flex-1 card-premium hover:border-oxford/30 text-oxford font-semibold py-3 rounded-xl transition-all"
-                                        >
-                                            📋 Manage
-                                        </button>
-                                    )}
                                 </div>
                             </div>
                         </div>
@@ -606,6 +639,28 @@ const Events: React.FC<Props> = ({ currentUser }) => {
                                     onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
                                     placeholder={newEvent.type === 'virtual' ? 'Zoom link (optional)' : 'Event venue'}
                                     required={newEvent.type === 'physical'}
+                                    className="w-full px-4 py-3 bg-surface-secondary border border-surface-tertiary rounded-xl text-oxford focus:outline-none focus:ring-2 focus:ring-oxford/10"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block mb-2">Cover Image URL (Optional)</label>
+                                <input
+                                    type="url"
+                                    value={newEvent.imageUrl}
+                                    onChange={(e) => setNewEvent({ ...newEvent, imageUrl: e.target.value })}
+                                    placeholder="https://example.com/image.jpg"
+                                    className="w-full px-4 py-3 bg-surface-secondary border border-surface-tertiary rounded-xl text-oxford focus:outline-none focus:ring-2 focus:ring-oxford/10"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest block mb-2">Tags (Comma separated)</label>
+                                <input
+                                    type="text"
+                                    value={newEvent.tags}
+                                    onChange={(e) => setNewEvent({ ...newEvent, tags: e.target.value })}
+                                    placeholder="AI, Workshop, Mentorship"
                                     className="w-full px-4 py-3 bg-surface-secondary border border-surface-tertiary rounded-xl text-oxford focus:outline-none focus:ring-2 focus:ring-oxford/10"
                                 />
                             </div>

@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where, Timestamp } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import type { NetworkingStats, UserProfile } from "../types";
 import { getUserConnections } from "./connections";

@@ -3,6 +3,11 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { getJobs, postJob, submitJobApplication, getJobApplications, submitReferralRequest, checkExistingReferralRequest } from '../services/jobs';
 import { analyzeSkillGap, type SkillGapAnalysis } from '../services/analytics';
 import type { Job, UserProfile, JobApplication } from '../types';
+import {
+    Briefcase, Target, Home, Star, Search, MapPin,
+    Check, AlertTriangle, Rocket, FileText,
+    X, FolderOpen, Handshake, Filter
+} from 'lucide-react';
 
 interface Props {
     onAskReferral?: (alum: any) => void;
@@ -13,7 +18,7 @@ type LocationFilter = 'all' | 'remote' | 'onsite' | 'hybrid';
 type MatchFilter = 'all' | 'high' | 'medium' | 'low';
 type SortOption = 'match' | 'recent' | 'company';
 
-const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
+const Jobs: React.FC<Props> = ({ currentUser }) => {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [loading, setLoading] = useState(true);
     const [isPosting, setIsPosting] = useState(false);
@@ -373,7 +378,7 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
                         onClick={() => setShowSavedOnly(!showSavedOnly)}
                         className={`card-premium px-4 py-2 text-sm font-semibold transition-colors ${showSavedOnly ? 'bg-gold/10 text-gold border-gold/30' : 'text-text-secondary hover:text-oxford'}`}
                     >
-                        ⭐ Saved ({savedJobs.size})
+                        <Star size={16} className={`inline mr-1 ${showSavedOnly ? 'fill-current' : ''}`} /> Saved ({savedJobs.size})
                     </button>
                     <button
                         onClick={() => setIsPosting(!isPosting)}
@@ -386,15 +391,15 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
             {/* Stats Bar */}
             <div className="flex flex-wrap gap-4">
                 {[
-                    { label: 'Total Jobs', value: stats.total, icon: '💼' },
-                    { label: 'High Match', value: stats.highMatch, icon: '🎯' },
-                    { label: 'Remote', value: stats.remote, icon: '🏠' },
-                    { label: 'Saved', value: stats.saved, icon: '⭐' },
+                    { label: 'Total Jobs', value: stats.total, icon: Briefcase },
+                    { label: 'High Match', value: stats.highMatch, icon: Target },
+                    { label: 'Remote', value: stats.remote, icon: Home },
+                    { label: 'Saved', value: stats.saved, icon: Star },
                 ].map((stat, i) => (
                     <div key={i} className="card-premium px-5 py-3 text-center min-w-[100px]">
                         <p className="text-2xl font-bold text-oxford">{stat.value}</p>
                         <p className="text-[10px] font-bold text-text-muted uppercase tracking-widest flex items-center justify-center gap-1">
-                            <span>{stat.icon}</span> {stat.label}
+                            <stat.icon size={12} /> {stat.label}
                         </p>
                     </div>
                 ))}
@@ -411,13 +416,13 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
                             placeholder="Search jobs by title, company, or location..."
                             className="w-full card-premium px-6 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-oxford/10 transition-all placeholder:text-text-muted"
                         />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted">🔍</span>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted"><Search size={18} /></span>
                     </div>
                     <button
                         onClick={() => setShowFilters(!showFilters)}
-                        className={`card-premium px-4 py-3 transition-colors ${showFilters ? 'bg-oxford text-gold' : 'text-oxford hover:bg-surface-secondary'}`}
+                        className={`card-premium px-4 py-3 transition-colors flex items-center gap-2 ${showFilters ? 'bg-oxford text-gold' : 'text-oxford hover:bg-surface-secondary'}`}
                     >
-                        ⚙️ Filters
+                        <Filter size={18} /> Filters
                     </button>
                 </div>
 
@@ -522,7 +527,7 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
                                         </span>
                                     </div>
                                     <p className="text-gold font-semibold">{job.company}</p>
-                                    <p className="text-sm text-text-muted mt-1 font-medium">📍 {job.location}</p>
+                                    <p className="text-sm text-text-muted mt-1 font-medium flex items-center gap-1"><MapPin size={12} /> {job.location}</p>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <button
@@ -530,7 +535,7 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
                                         className={`text-xl transition-all ${isSaved ? 'text-gold scale-110' : 'text-text-muted hover:text-gold'}`}
                                         title={isSaved ? 'Unsave' : 'Save job'}
                                     >
-                                        {isSaved ? '⭐' : '☆'}
+                                        <Star size={20} fill={isSaved ? "currentColor" : "none"} />
                                     </button>
                                     <div className="text-right">
                                         <div className="text-[10px] text-text-muted uppercase font-bold mb-1 tracking-wider">
@@ -564,16 +569,16 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
                                     <div className="flex flex-wrap gap-2">
                                         {analysis?.matching_skills?.slice(0, 2).map(skill => (
                                             <span key={skill} className="flex items-center gap-1 bg-success/5 border border-success/10 text-success px-2 py-1 rounded-lg text-xs font-medium">
-                                                ✓ {skill}
+                                                <Check size={10} /> {skill}
                                             </span>
                                         ))}
                                         {missingSkills.slice(0, 2).map(skill => (
                                             <span key={skill} className="flex items-center gap-1 bg-alert/5 border border-alert/10 text-alert px-2 py-1 rounded-lg text-xs font-medium">
-                                                ⚠ {skill}
+                                                <AlertTriangle size={10} /> {skill}
                                             </span>
                                         ))}
                                         {(missingSkills.length === 0 && !analysis?.matching_skills?.length) && (
-                                            <span className="text-xs text-success font-medium">✓ Skills matched!</span>
+                                            <span className="text-xs text-success font-medium flex items-center gap-1"><Check size={12} /> Skills matched!</span>
                                         )}
                                     </div>
                                 )}
@@ -591,24 +596,24 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
                             <div className="flex gap-3 pt-4 border-t border-surface-tertiary mt-auto">
                                 <button
                                     onClick={() => handleApplyNow(job)}
-                                    className="btn-oxford flex-1 py-2.5 text-sm"
+                                    className="btn-oxford flex-1 py-2.5 text-sm flex items-center justify-center gap-2"
                                     disabled={!currentUser}
                                 >
-                                    🚀 Apply Now
+                                    <Rocket size={16} /> Apply Now
                                 </button>
                                 <button
                                     onClick={() => handleAskReferral(job)}
-                                    className="flex-1 py-2.5 card-premium hover:border-gold/30 text-oxford font-semibold transition-colors text-sm"
+                                    className="flex-1 py-2.5 card-premium hover:border-gold/30 text-oxford font-semibold transition-colors text-sm flex items-center justify-center gap-2"
                                     disabled={!currentUser || submittingReferral || (job.id ? referralRequests.has(job.id) : false)}
                                 >
-                                    {job.id && referralRequests.has(job.id) ? '✓ Requested' : '🤝 Ask Referral'}
+                                    {job.id && referralRequests.has(job.id) ? <><Check size={16} /> Requested</> : <><Handshake size={16} /> Ask Referral</>}
                                 </button>
                                 {currentUser && job.postedBy === currentUser.uid && (
                                     <button
                                         onClick={() => handleViewApplications(job)}
-                                        className="flex-1 py-2.5 card-premium hover:border-oxford/30 text-oxford font-semibold transition-colors text-sm"
+                                        className="flex-1 py-2.5 card-premium hover:border-oxford/30 text-oxford font-semibold transition-colors text-sm flex items-center justify-center gap-2"
                                     >
-                                        📋 View Applications
+                                        <FileText size={16} /> View Applications
                                     </button>
                                 )}
                             </div>
@@ -616,7 +621,7 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
                     );
                 }) : (
                     <div className="col-span-full py-16 text-center">
-                        <p className="text-4xl mb-4">💼</p>
+                        <FolderOpen size={48} className="mx-auto mb-4 text-text-muted" />
                         <p className="text-text-muted text-lg">No jobs found matching your criteria.</p>
                         <button
                             onClick={() => { setSearchQuery(''); setLocationFilter('all'); setMatchFilter('all'); setShowSavedOnly(false); }}
@@ -638,7 +643,7 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
                                 <p className="text-gold font-semibold">{selectedJob.title} at {selectedJob.company}</p>
                             </div>
                             <button onClick={() => setShowApplicationModal(false)} className="text-text-muted hover:text-oxford text-2xl">
-                                ×
+                                <X size={24} />
                             </button>
                         </div>
 
@@ -730,13 +735,13 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
                                 <p className="text-sm text-text-muted mt-1">{jobApplications.length} application{jobApplications.length !== 1 ? 's' : ''} received</p>
                             </div>
                             <button onClick={() => setShowApplicationsModal(false)} className="text-text-muted hover:text-oxford text-2xl">
-                                ×
+                                <X size={24} />
                             </button>
                         </div>
 
                         {jobApplications.length === 0 ? (
                             <div className="text-center py-12">
-                                <p className="text-4xl mb-4">📭</p>
+                                <FolderOpen size={48} className="mx-auto mb-4 text-text-muted" />
                                 <p className="text-text-muted">No applications yet</p>
                             </div>
                         ) : (
@@ -750,9 +755,9 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
                                                 <p className="text-sm text-text-secondary">{application.phoneNumber}</p>
                                             </div>
                                             <span className={`text-xs font-bold px-3 py-1 rounded-full ${application.status === 'pending' ? 'bg-gold/10 text-gold border border-gold/20' :
-                                                    application.status === 'reviewed' ? 'bg-oxford/10 text-oxford border border-oxford/20' :
-                                                        application.status === 'accepted' ? 'bg-success/10 text-success border border-success/20' :
-                                                            'bg-alert/10 text-alert border border-alert/20'
+                                                application.status === 'reviewed' ? 'bg-oxford/10 text-oxford border border-oxford/20' :
+                                                    application.status === 'accepted' ? 'bg-success/10 text-success border border-success/20' :
+                                                        'bg-alert/10 text-alert border border-alert/20'
                                                 }`}>
                                                 {application.status.toUpperCase()}
                                             </span>
@@ -770,7 +775,7 @@ const Jobs: React.FC<Props> = ({ onAskReferral, currentUser }) => {
                                                 rel="noopener noreferrer"
                                                 className="inline-flex items-center gap-2 text-sm text-oxford hover:text-gold font-semibold transition-colors"
                                             >
-                                                📄 View Resume →
+                                                <FileText size={14} /> View Resume →
                                             </a>
                                         )}
 

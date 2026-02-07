@@ -1,34 +1,49 @@
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "../firebase";
-import { Timestamp } from "firebase/firestore";
 
-// Simulate SHA-256 Hashing (Mock)
-const mockSha256 = async (data: string): Promise<string> => {
-    const msgBuffer = new TextEncoder().encode(data);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
-};
+const API_URL = 'http://localhost:8001';
 
-export const verifyUserOnBlockchain = async (userId: string) => {
+export interface AadhaarVerificationResult {
+    status: 'SUCCESS' | 'FAILED' | 'ERROR';
+    message: string;
+    extracted?: {
+        name: string;
+        gender: string;
+        state: string;
+    };
+    details?: {
+        name_match: boolean;
+        dob_match: boolean;
+        last_4_match: boolean;
+    };
+}
+
+export const verifyAadhaar = async (
+    file: File,
+    name: string,
+    dob: string,
+    last4: string
+): Promise<AadhaarVerificationResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('name', name);
+    formData.append('dob', dob);
+    formData.append('last_4_digits', last4);
+
     try {
-        // 1. Generate unique hash for the verification event
-        const hash = await mockSha256(`VERIFY_${userId}_${Date.now()}`);
-
-        // 2. Store "on-chain" (simulated by storing hash in Firestore)
-        const userRef = doc(db, "users", userId);
-        await updateDoc(userRef, {
-            verification: {
-                isVerified: true,
-                certificateHash: hash,
-                issuedAt: Timestamp.now()
-            }
+        const response = await fetch(`${API_URL}/verify-aadhaar`, {
+            method: 'POST',
+            body: formData,
         });
 
-        return hash;
+        if (!response.ok) {
+            throw new Error(`Verification failed: ${response.statusText}`);
+        }
+
+        return await response.json();
     } catch (error) {
-        console.error("Blockchain verification failed:", error);
-        throw error;
+        console.error('Aadhaar verification error:', error);
+        return {
+            status: 'ERROR',
+            message: error instanceof Error ? error.message : 'Unknown error occurred'
+        };
     }
 };

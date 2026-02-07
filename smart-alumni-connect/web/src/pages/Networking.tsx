@@ -1,3 +1,9 @@
+import {
+    Send, Paperclip,
+    Smile,
+    Loader2, Lightbulb, Check, Sparkles as SparklesIcon
+} from 'lucide-react';
+
 import React, { useState, useEffect, useRef } from 'react';
 import { generateIcebreakers } from '../services/geminiService';
 import { getAllUsers } from '../services/user';
@@ -57,6 +63,8 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Using icons for reactions in UI might be complex if we store them as strings. 
+    // For now, let's keep data as emojis but UI as clean as possible.
     const reactions = ['👍', '❤️', '😂', '😮', '😢', '🎉'];
 
     // Set user online on mount
@@ -101,7 +109,6 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
 
     const processedInitialUserRef = useRef<string | null>(null);
 
-    // Load chat partners (recent connections)
     // Load chat partners (recent connections)
     useEffect(() => {
         const loadChatPartners = async () => {
@@ -325,7 +332,13 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
         if (!chatId || !currentUser) return;
 
         try {
-            await addMessageReaction(chatId, messageId, currentUser.uid, currentUser.displayName, reaction);
+            await addMessageReaction(
+                chatId,
+                messageId,
+                currentUser.uid,
+                currentUser.displayName || 'Anonymous', // Fix: Handle null displayName
+                reaction
+            );
             setShowReactionPicker(null);
         } catch (error) {
             console.error('Failed to add reaction:', error);
@@ -338,13 +351,13 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
         try {
             await sendConnectionRequest(
                 currentUser.uid,
-                currentUser.displayName,
-                currentUser.photoURL,
+                currentUser.displayName || 'Anonymous', // Fix: Handle null
+                currentUser.photoURL || undefined, // Fix: Handle null
                 currentUser.role,
                 currentUser.company,
                 user.uid,
-                user.displayName,
-                user.photoURL,
+                user.displayName || 'Amumni Member', // Fix: Handle null
+                user.photoURL || undefined, // Fix: Handle null
                 user.role,
                 user.company,
                 connectionMessage
@@ -474,7 +487,7 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                                             <img
                                                 src={u.photoURL || "https://picsum.photos/seed/user/200/200"}
                                                 className="w-12 h-12 rounded-full border border-gray-100"
-                                                alt={u.displayName}
+                                                alt={u.displayName || 'User'}
                                             />
                                             {isOnline && (
                                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
@@ -522,7 +535,7 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                                         <img
                                             src={selectedUser.photoURL || "https://picsum.photos/seed/user/200/200"}
                                             className="w-10 h-10 rounded-full border border-white shadow-sm"
-                                            alt={selectedUser.displayName}
+                                            alt={selectedUser.displayName || 'User'}
                                         />
                                         {userPresence[selectedUser.uid]?.status === 'online' && (
                                             <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
@@ -548,7 +561,7 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                                         disabled={isGenerating}
                                         className="hidden md:flex text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-4 py-2 rounded-full font-bold transition-all items-center gap-2 border border-indigo-100"
                                     >
-                                        {isGenerating ? '⏳ Thinking...' : '💡 Icebreakers'}
+                                        {isGenerating ? <><Loader2 className="animate-spin" size={14} /> Generating...</> : <><Lightbulb size={14} /> Icebreakers</>}
                                     </button>
                                 </div>
                             </div>
@@ -581,7 +594,7 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                                                         rel="noopener noreferrer"
                                                         className="flex items-center gap-3 p-4 hover:bg-gray-50"
                                                     >
-                                                        <div className="text-3xl">📎</div>
+                                                        <div className="text-3xl text-slate-400"><Paperclip size={24} /></div>
                                                         <div className="flex-1 min-w-0">
                                                             <p className="font-medium truncate">{m.fileName}</p>
                                                             <p className="text-xs opacity-70">{m.fileSize && formatFileSize(m.fileSize)}</p>
@@ -606,21 +619,21 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                                                 {/* Read Receipt */}
                                                 {isMe && (
                                                     <div className="px-4 pb-2 text-xs opacity-70 text-right">
-                                                        {isRead ? '✓✓' : '✓'}
+                                                        {isRead ? <Check size={14} className="inline ml-1" /> : <div className="w-3 h-3 rounded-full border border-current inline-block ml-1 opacity-50" />}
                                                     </div>
                                                 )}
 
                                                 {/* Reaction Button */}
                                                 <button
                                                     onClick={() => setShowReactionPicker(showReactionPicker === m.id ? null : m.id!)}
-                                                    className="absolute -bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-200 rounded-full p-1 text-xs shadow-lg"
+                                                    className="absolute -bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity bg-white border border-gray-200 rounded-full p-1 text-xs shadow-lg text-slate-500 hover:text-indigo-600"
                                                 >
-                                                    😊
+                                                    <Smile size={14} />
                                                 </button>
 
                                                 {/* Reaction Picker */}
                                                 {showReactionPicker === m.id && (
-                                                    <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-xl p-2 flex gap-1">
+                                                    <div className="absolute bottom-full right-0 mb-2 bg-white border border-gray-200 rounded-xl shadow-xl p-2 flex gap-1 z-10">
                                                         {reactions.map(reaction => (
                                                             <button
                                                                 key={reaction}
@@ -653,7 +666,9 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
 
                                 {icebreakers.length > 0 && (
                                     <div className="animate-in slide-in-from-bottom-2 duration-300">
-                                        <p className="text-[10px] font-bold text-indigo-400 uppercase mb-3 tracking-widest">AI Suggestions</p>
+                                        <p className="text-[10px] font-bold text-indigo-400 uppercase mb-3 tracking-widest flex items-center gap-2">
+                                            <SparklesIcon size={12} /> AI Suggestions
+                                        </p>
                                         <div className="flex flex-col gap-2">
                                             {icebreakers.map((ib, i) => (
                                                 <button
@@ -670,7 +685,7 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                             </div>
 
                             {/* Input Area */}
-                            <div className="p-6 border-t border-gray-50 flex items-center gap-3">
+                            <div className="p-6 border-t border-gray-50 flex items-center gap-3 bg-white">
                                 <input
                                     type="file"
                                     ref={fileInputRef}
@@ -681,10 +696,10 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                                 <button
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={uploading}
-                                    className="p-3 hover:bg-gray-100 rounded-xl transition-all text-slate-600"
+                                    className="p-3 hover:bg-gray-100 rounded-xl transition-all text-slate-400 hover:text-indigo-600"
                                     title="Attach file"
                                 >
-                                    {uploading ? '⏳' : '📎'}
+                                    {uploading ? <Loader2 className="animate-spin" size={20} /> : <Paperclip size={20} />}
                                 </button>
                                 <div className="relative flex-1">
                                     <input
@@ -693,13 +708,13 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                                         onChange={(e) => handleInputChange(e.target.value)}
                                         onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
                                         placeholder="Type a message..."
-                                        className="w-full bg-slate-50 border border-gray-200 rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all shadow-inner"
+                                        className="w-full bg-slate-50 border border-gray-200 rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 transition-all shadow-inner text-sm"
                                     />
                                     <button
                                         onClick={() => handleSend(input)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-sm font-bold shadow-lg hover:bg-indigo-700 transition-all"
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 bg-indigo-600 text-white p-2 rounded-xl shadow-lg hover:bg-indigo-700 transition-all"
                                     >
-                                        Send
+                                        <Send size={18} />
                                     </button>
                                 </div>
                             </div>
@@ -717,8 +732,8 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
 
             {/* Connection Requests Tab */}
             {activeTab === 'requests' && (
-                <div className="flex-1 bg-white rounded-3xl p-8 border border-gray-100 overflow-y-auto">
-                    <h2 className="text-xl font-bold text-slate-900 mb-6">Connection Requests</h2>
+                <div className="card-premium p-8 overflow-y-auto flex-1">
+                    <h2 className="text-xl font-bold text-oxford mb-6 font-heading">Connection Requests</h2>
                     {connectionRequests.length === 0 ? (
                         <div className="text-center py-12 text-slate-400">
                             <p>No pending connection requests</p>
@@ -742,7 +757,7 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                                     <div className="flex gap-2">
                                         <button
                                             onClick={() => handleAcceptRequest(request.id!)}
-                                            className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all"
+                                            className="btn-oxford text-xs"
                                         >
                                             Accept
                                         </button>
@@ -762,8 +777,8 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
 
             {/* Suggestions Tab */}
             {activeTab === 'suggestions' && (
-                <div className="flex-1 bg-white rounded-3xl p-8 border border-gray-100 overflow-y-auto">
-                    <h2 className="text-xl font-bold text-slate-900 mb-6">People You May Know</h2>
+                <div className="card-premium p-8 overflow-y-auto flex-1">
+                    <h2 className="text-xl font-bold text-oxford mb-6 font-heading">People You May Know</h2>
                     {suggestions.length === 0 ? (
                         <div className="text-center py-12 text-slate-400">
                             <p>No suggestions available</p>
@@ -775,7 +790,7 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                                     <img
                                         src={user.photoURL || "https://picsum.photos/seed/user/200/200"}
                                         className="w-16 h-16 rounded-full border border-gray-200"
-                                        alt={user.displayName}
+                                        alt={user.displayName || 'User'}
                                     />
                                     <div className="flex-1">
                                         <p className="font-bold text-slate-900">{user.displayName}</p>
@@ -787,7 +802,7 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                                             setSelectedUserForConnection(user);
                                             setShowConnectionModal(true);
                                         }}
-                                        className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition-all"
+                                        className="btn-oxford text-xs"
                                     >
                                         Connect
                                     </button>
@@ -800,8 +815,8 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
 
             {/* Analytics Tab */}
             {activeTab === 'analytics' && stats && (
-                <div className="flex-1 bg-white rounded-3xl p-8 border border-gray-100 overflow-y-auto">
-                    <h2 className="text-xl font-bold text-slate-900 mb-6">Networking Analytics</h2>
+                <div className="card-premium p-8 overflow-y-auto flex-1">
+                    <h2 className="text-xl font-bold text-oxford mb-6 font-heading">Networking Analytics</h2>
 
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
@@ -871,7 +886,7 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                             <img
                                 src={selectedUserForConnection.photoURL || "https://picsum.photos/seed/user/200/200"}
                                 className="w-16 h-16 rounded-full border border-gray-200"
-                                alt={selectedUserForConnection.displayName}
+                                alt={selectedUserForConnection.displayName || 'User'}
                             />
                             <div>
                                 <p className="font-bold text-slate-900">{selectedUserForConnection.displayName}</p>

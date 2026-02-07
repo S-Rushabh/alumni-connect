@@ -1,4 +1,4 @@
-import { collection, addDoc, query, orderBy, onSnapshot, Timestamp, doc, updateDoc, arrayUnion, getDocs, where, setDoc, deleteDoc, limit } from "firebase/firestore";
+import { collection, addDoc, query, orderBy, onSnapshot, Timestamp, doc, updateDoc, arrayUnion, getDocs, where, setDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import type { ChatMessage, MessageReaction, UserProfile } from "../types";
 import { getUserProfile } from "./user";
