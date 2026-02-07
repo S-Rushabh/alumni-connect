@@ -371,9 +371,9 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
         }
     };
 
-    const handleAcceptRequest = async (connectionId: string) => {
+    const handleAcceptRequest = async (connectionId: string, connection: Connection) => {
         try {
-            await acceptConnectionRequest(connectionId);
+            await acceptConnectionRequest(connectionId, connection);
             // Refresh connections
             if (currentUser) {
                 // The subscriptions handle updates, no need to manually fetch
@@ -756,7 +756,7 @@ const Networking: React.FC<Props> = ({ currentUser, initialUser }) => {
                                     </div>
                                     <div className="flex gap-2">
                                         <button
-                                            onClick={() => handleAcceptRequest(request.id!)}
+                                            onClick={() => handleAcceptRequest(request.id!, request)}
                                             className="btn-oxford text-xs"
                                         >
                                             Accept

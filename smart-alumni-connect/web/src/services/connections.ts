@@ -1,4 +1,4 @@
-import { collection, addDoc, getDocs, query, where, orderBy, Timestamp, doc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
+import { collection, addDoc, getDocs, query, where, orderBy, Timestamp, doc, updateDoc, deleteDoc, onSnapshot, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Connection } from "../types";
 
@@ -24,21 +24,27 @@ export const sendConnectionRequest = async (
         }
 
         const connectionsRef = collection(db, 'connections');
-        await addDoc(connectionsRef, {
+
+        // Build connection data object, omitting undefined fields
+        const connectionData: any = {
             requesterId,
             requesterName,
-            requesterPhoto,
-            requesterRole,
-            requesterCompany,
             recipientId,
             recipientName,
-            recipientPhoto,
-            recipientRole,
-            recipientCompany,
             status: 'pending',
             message: message || '',
             createdAt: Timestamp.now()
-        });
+        };
+
+        // Only add optional fields if they're defined
+        if (requesterPhoto) connectionData.requesterPhoto = requesterPhoto;
+        if (requesterRole) connectionData.requesterRole = requesterRole;
+        if (requesterCompany) connectionData.requesterCompany = requesterCompany;
+        if (recipientPhoto) connectionData.recipientPhoto = recipientPhoto;
+        if (recipientRole) connectionData.recipientRole = recipientRole;
+        if (recipientCompany) connectionData.recipientCompany = recipientCompany;
+
+        await addDoc(connectionsRef, connectionData);
 
         console.log("Connection request sent successfully");
     } catch (error) {
@@ -48,14 +54,26 @@ export const sendConnectionRequest = async (
 };
 
 // Accept Connection Request
-export const acceptConnectionRequest = async (connectionId: string) => {
+export const acceptConnectionRequest = async (connectionId: string, connection: Connection) => {
     try {
         const connectionRef = doc(db, 'connections', connectionId);
         await updateDoc(connectionRef, {
             status: 'accepted',
             respondedAt: Timestamp.now()
         });
-        console.log("Connection request accepted");
+
+        // Create chat thread when connection is accepted
+        const chatId = [connection.requesterId, connection.recipientId].sort().join('_');
+        const chatRef = doc(db, 'chats', chatId);
+        await setDoc(chatRef, {
+            participants: [connection.requesterId, connection.recipientId],
+            participantIds: [connection.requesterId, connection.recipientId],
+            lastMessage: '',
+            lastUpdated: Timestamp.now(),
+            createdAt: Timestamp.now()
+        }, { merge: true });
+
+        console.log("Connection request accepted and chat created");
     } catch (error) {
         console.error("Error accepting connection request:", error);
         throw error;
